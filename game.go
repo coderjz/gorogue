@@ -22,18 +22,16 @@ const FLOOR rune = '.'
 const ENEMY rune = 'x'
 
 type Game struct {
-	level *Level
-	x     int
-	y     int
+	level  *Level
+	player *Player
 }
 
 func NewGame() *Game {
 	level := NewLevel()
 
 	return &Game{
-		level: level,
-		x:     level.startX,
-		y:     level.startY,
+		level:  level,
+		player: NewPlayer(level.startX, level.startY),
 	}
 }
 
@@ -48,7 +46,7 @@ func (g *Game) render() {
 		}
 	}
 
-	termbox.SetCell(g.x, g.y, '@', foregroundColor, backgroundColor)
+	termbox.SetCell(g.player.x, g.player.y, g.player.content, foregroundColor, backgroundColor)
 	termbox.Flush()
 }
 
@@ -65,13 +63,13 @@ func (g *Game) move(dir Direction) {
 	case RIGHT:
 		x = 1
 	}
-	newX := g.x + x
-	newY := g.y + y
+	newX := g.player.x + x
+	newY := g.player.y + y
 
 	if g.level.cells.get(newX, newY).content == WALL {
 		return
 	}
 
-	g.x = newX
-	g.y = newY
+	g.player.x = newX
+	g.player.y = newY
 }
