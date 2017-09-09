@@ -9,6 +9,7 @@ import (
 //Level represents one level of the dungeon
 type Level struct {
 	cells  Cells
+	rooms  []*Room
 	startX int
 	startY int
 }
@@ -50,7 +51,7 @@ func NewLevel() *Level {
 		for j := range cells[i] {
 			cells[i][j] = Cell{
 				content: WALL,
-				visible: true,
+				visible: false,
 			}
 		}
 	}
@@ -71,9 +72,19 @@ func NewLevel() *Level {
 
 	return &Level{
 		cells:  cells,
+		rooms:  rooms,
 		startX: startX,
 		startY: startY,
 	}
+}
+
+func (l *Level) roomContainsPoint(x, y int) *Room {
+	for _, r := range l.rooms {
+		if r.pointIntersects(x, y) {
+			return r
+		}
+	}
+	return nil
 }
 
 //Room represents a single room within a level
@@ -94,13 +105,18 @@ func (r *Room) intersects(r2 *Room) bool {
 		r.y1 <= r2.y2 && r.y2 >= r2.y1)
 }
 
+func (r *Room) pointIntersects(x, y int) bool {
+	//Do not check equals because we don't want to intersect when we are along a wall
+	return x > r.x1 && x < r.x2 && y > r.y1 && y < r.y2
+}
+
 func convertRoomsToCells(rooms []*Room, cells *Cells) {
 	for _, room := range rooms {
 		for x := room.x1 + 1; x < room.x2; x++ {
 			for y := room.y1 + 1; y < room.y2; y++ {
 				c := Cell{
 					content: FLOOR,
-					visible: true,
+					visible: false,
 				}
 
 				cells.set(x, y, c)
@@ -182,7 +198,7 @@ func generateHorizTunnel(x1, x2, y int, cells *Cells) {
 	for i := x1; i <= x2; i++ {
 		cells.set(i, y, Cell{
 			content: FLOOR,
-			visible: true,
+			visible: false,
 		})
 	}
 }
@@ -194,7 +210,7 @@ func generateVertTunnel(x, y1, y2 int, cells *Cells) {
 	for i := y1; i <= y2; i++ {
 		cells.set(x, i, Cell{
 			content: FLOOR,
-			visible: true,
+			visible: false,
 		})
 	}
 }

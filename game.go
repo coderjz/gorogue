@@ -36,6 +36,8 @@ func NewGame() *Game {
 }
 
 func (g *Game) render() {
+	g.updateFOV()
+
 	termbox.Clear(backgroundColor, backgroundColor)
 
 	for y, line := range g.level.cells {
@@ -48,6 +50,24 @@ func (g *Game) render() {
 
 	termbox.SetCell(g.player.x, g.player.y, g.player.content, foregroundColor, backgroundColor)
 	termbox.Flush()
+}
+
+func (g *Game) updateFOV() {
+	x, y := g.player.x, g.player.y
+	r := g.level.roomContainsPoint(x, y)
+	if r != nil {
+		for x = r.x1; x <= r.x2; x++ {
+			for y = r.y1; y <= r.y2; y++ {
+				g.level.cells[y][x].visible = true
+			}
+		}
+	} else {
+		g.level.cells[y][x].visible = true
+		g.level.cells[y][x+1].visible = true
+		g.level.cells[y][x-1].visible = true
+		g.level.cells[y+1][x].visible = true
+		g.level.cells[y-1][x].visible = true
+	}
 }
 
 func (g *Game) move(dir Direction) {

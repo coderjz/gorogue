@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -27,12 +26,14 @@ func main() {
 	}()
 
 	log.SetFlags(log.Lshortfile)
-	logFileName := fmt.Sprintf("./logs_%s", time.Now().Format("010206_030405"))
+	logFileName := "./logs"
 	f, err := os.Create(logFileName)
 	if err != nil {
 		panic("Cannot make log file")
 	}
 	log.SetOutput(f)
+
+	log.Printf("\n\nStarting game at %s", time.Now().Format("010206_030405"))
 
 	//TODO: Check terminal size (termbox.Size(), if not big enough and output error message)
 	//Maybe do that in the render itself or do it here with a check in the game loop?
