@@ -8,10 +8,11 @@ import (
 
 //Level represents one level of the dungeon
 type Level struct {
-	cells  Cells
-	rooms  []*Room
-	startX int
-	startY int
+	cells    Cells
+	rooms    []*Room
+	monsters []*Monster
+	startX   int
+	startY   int
 }
 
 //Cells is a type for a double array of cells
@@ -70,11 +71,14 @@ func NewLevel() *Level {
 
 	startX, startY := rooms[0].getCenter()
 
+	monsters := generateMonsters(rooms, startX, startY)
+
 	return &Level{
-		cells:  cells,
-		rooms:  rooms,
-		startX: startX,
-		startY: startY,
+		cells:    cells,
+		rooms:    rooms,
+		monsters: monsters,
+		startX:   startX,
+		startY:   startY,
 	}
 }
 
@@ -108,6 +112,16 @@ func (r *Room) intersects(r2 *Room) bool {
 func (r *Room) pointIntersects(x, y int) bool {
 	//Do not check equals because we don't want to intersect when we are along a wall
 	return x > r.x1 && x < r.x2 && y > r.y1 && y < r.y2
+}
+
+func (r *Room) getPointInRoom() (x, y int) {
+	width := r.x2 - r.x1 - 2 //The -2 is because our width and height includes walls, which we don't want
+	height := r.y2 - r.y1 - 2
+
+	pos := levelRand.Intn(width * height)
+	x = r.x1 + 1 + (pos % width)
+	y = r.y1 + 1 + (pos / width)
+	return
 }
 
 func convertRoomsToCells(rooms []*Room, cells *Cells) {
@@ -212,5 +226,54 @@ func generateVertTunnel(x, y1, y2 int, cells *Cells) {
 			content: FLOOR,
 			visible: false,
 		})
+	}
+}
+
+func generateMonsters(rooms []*Room, startX, startY int) []*Monster {
+	allMonsters := make([]*Monster, 0)
+	for rIndex, r := range rooms {
+		roomMonsters := getMonstersForRoom()
+
+		//TODO: Randomize monsters positions (x, y)
+		//TODO: Make sure no monster starts on top of player start position or on top of another monster
+		for i := 0; i < len(roomMonsters); i++ {
+			roomMonsters[i].x, roomMonsters[i].y = r.getPointInRoom()
+
+			monsterPosHasConflict := false
+
+			for j := 0; j < i; j++ {
+				if roomMonsters[j].x == roomMonsters[i].x && roomMonsters[j].y == roomMonsters[i].y {
+					monsterPosHasConflict = true
+					break
+				}
+			}
+
+			if roomMonsters[i].x == startX && roomMonsters[i].y == startY {
+				monsterPosHasConflict = true
+			}
+
+			if monsterPosHasConflict {
+				i-- //Try again to generate this position
+			} else {
+				log.Printf("Added monster %s in room %d at position (%d, %d) \n", roomMonsters[i].name, rIndex, roomMonsters[i].x, roomMonsters[i].y)
+			}
+		}
+
+		allMonsters = append(allMonsters, roomMonsters...)
+	}
+	return allMonsters
+}
+
+func getMonstersForRoom() []*Monster {
+	num := levelRand.Intn(100)
+	switch {
+	case num < 30:
+		return []*Monster{}
+	case num < 75:
+		return []*Monster{NewMonster(Page)}
+	case num < 90:
+		return []*Monster{NewMonster(Page), NewMonster(Page)}
+	default:
+		return []*Monster{NewMonster(Page), NewMonster(Page), NewMonster(Page)}
 	}
 }

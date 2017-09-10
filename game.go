@@ -15,6 +15,7 @@ const (
 
 const backgroundColor = termbox.ColorBlack
 const foregroundColor = termbox.ColorWhite
+const monsterForegroundColor = termbox.ColorRed
 
 const WALL rune = '#'
 const GUY rune = '@'
@@ -40,11 +41,20 @@ func (g *Game) render() {
 
 	termbox.Clear(backgroundColor, backgroundColor)
 
+	//Display dungeon tiles
 	for y, line := range g.level.cells {
 		for x, cell := range line {
 			if cell.visible {
 				termbox.SetCell(x, y, cell.content, foregroundColor, backgroundColor)
 			}
+		}
+	}
+
+	//Add monsters on top of cells
+	for _, m := range g.level.monsters {
+		c := g.level.cells.get(m.x, m.y)
+		if c.visible {
+			termbox.SetCell(m.x, m.y, m.symbol, monsterForegroundColor, backgroundColor)
 		}
 	}
 
