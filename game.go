@@ -100,34 +100,28 @@ func (g *Game) movePlayer(dir Direction) bool {
 		return false
 	}
 
+	for _, m := range g.level.monsters {
+		if m.x == newX && m.y == newY {
+			//TODO: Player attacks monster
+			return true
+		}
+	}
+
 	g.player.x = newX
 	g.player.y = newY
 
 	return true
 }
 
-func (g *Game) moveMonster(m *Monster, dir Direction) {
-	x := 0
-	y := 0
-	switch dir {
-	case UP:
-		y = -1
-	case DOWN:
-		y = 1
-	case LEFT:
-		x = -1
-	case RIGHT:
-		x = 1
-	}
-	newX := m.x + x
-	newY := m.y + y
+func (g *Game) moveMonster(m *Monster) {
+	x, y := g.determineMonsterMoveNewPos(m.x, m.y)
 
-	if g.level.cells.get(newX, newY).content == WALL {
-		return
+	if g.player.x == x && g.player.y == y {
+		//TODO: Monster attack player
+	} else {
+		m.x = x
+		m.y = y
 	}
-
-	m.x = newX
-	m.y = newY
 }
 
 func (g *Game) updateMonsters() {
@@ -137,8 +131,38 @@ func (g *Game) updateMonsters() {
 		}
 
 		if m.active {
-			g.moveMonster(m, LEFT)
+			g.moveMonster(m)
 		}
 	}
+}
 
+//Given the input (x, y), what is the best way to move towards the player
+func (g *Game) determineMonsterMoveNewPos(x, y int) (int, int) {
+	//For now, we'll just do it based off a naive check of player coordinates vs. monster coordinates
+	//TODO: A* Search ?
+	if g.player.x < x && g.monsterCanMoveTo(x-1, y) {
+		return x - 1, y
+	} else if g.player.x > x && g.monsterCanMoveTo(x+1, y) {
+		return x + 1, y
+	} else if g.player.y < y && g.monsterCanMoveTo(x, y-1) {
+		return x, y - 1
+	} else if g.player.y > y && g.monsterCanMoveTo(x, y+1) {
+		return x, y + 1
+	} else {
+		return x, y
+	}
+}
+
+func (g *Game) monsterCanMoveTo(x, y int) bool {
+	c := g.level.cells.get(x, y)
+	if c.content == WALL {
+		return false
+	}
+
+	for _, m := range g.level.monsters {
+		if m.x == x && m.y == y {
+			return false
+		}
+	}
+	return true
 }
