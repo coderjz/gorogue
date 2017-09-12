@@ -37,8 +37,6 @@ func NewGame() *Game {
 }
 
 func (g *Game) render() {
-	g.updateFOV()
-
 	termbox.Clear(backgroundColor, backgroundColor)
 
 	//Display dungeon tiles
@@ -80,7 +78,9 @@ func (g *Game) updateFOV() {
 	}
 }
 
-func (g *Game) move(dir Direction) {
+//Return value is if the move requested counts as a player action.
+//Moving into a wall does not count as an action
+func (g *Game) movePlayer(dir Direction) bool {
 	x := 0
 	y := 0
 	switch dir {
@@ -97,9 +97,48 @@ func (g *Game) move(dir Direction) {
 	newY := g.player.y + y
 
 	if g.level.cells.get(newX, newY).content == WALL {
-		return
+		return false
 	}
 
 	g.player.x = newX
 	g.player.y = newY
+
+	return true
+}
+
+func (g *Game) moveMonster(m *Monster, dir Direction) {
+	x := 0
+	y := 0
+	switch dir {
+	case UP:
+		y = -1
+	case DOWN:
+		y = 1
+	case LEFT:
+		x = -1
+	case RIGHT:
+		x = 1
+	}
+	newX := m.x + x
+	newY := m.y + y
+
+	if g.level.cells.get(newX, newY).content == WALL {
+		return
+	}
+
+	m.x = newX
+	m.y = newY
+}
+
+func (g *Game) updateMonsters() {
+	for _, m := range g.level.monsters {
+		if g.level.cells.get(m.x, m.y).visible {
+			m.active = true
+		}
+
+		if m.active {
+			g.moveMonster(m, LEFT)
+		}
+	}
+
 }

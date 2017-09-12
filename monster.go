@@ -6,6 +6,7 @@ type Monster struct {
 	hp     int
 	name   string
 	symbol rune //What is displayed in the cell
+	active bool
 }
 
 var monsterList []*Monster
@@ -41,6 +42,10 @@ func init() {
 			name:   "Commander",
 			symbol: 'C',
 		},
+	}
+
+	for _, m := range monsterList {
+		m.active = false
 	}
 }
 
