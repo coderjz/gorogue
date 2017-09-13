@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	termbox "github.com/nsf/termbox-go"
 )
 
@@ -57,6 +59,13 @@ func (g *Game) render() {
 	}
 
 	termbox.SetCell(g.player.x, g.player.y, g.player.content, foregroundColor, backgroundColor)
+
+	//Render menu
+	menuString := fmt.Sprintf("Lvl: %d: HP: %d/%d", g.player.level, g.player.hp, g.player.maxHP)
+	bottomRow := 23
+	for i := 0; i < len(menuString); i++ {
+		termbox.SetCell(i, bottomRow, rune(menuString[i]), foregroundColor, backgroundColor)
+	}
 	termbox.Flush()
 }
 
@@ -100,9 +109,17 @@ func (g *Game) movePlayer(dir Direction) bool {
 		return false
 	}
 
-	for _, m := range g.level.monsters {
+	for i, m := range g.level.monsters {
 		if m.x == newX && m.y == newY {
 			//TODO: Player attacks monster
+			damage := 3
+			m.hp -= damage
+			if m.hp <= 0 {
+				//TODO: Handle player EXP, level up, here
+
+				//Just remove the monster from the array, it shouldn't re-render
+				g.level.monsters = append(g.level.monsters[:i], g.level.monsters[i+1:]...)
+			}
 			return true
 		}
 	}
@@ -117,7 +134,12 @@ func (g *Game) moveMonster(m *Monster) {
 	x, y := g.determineMonsterMoveNewPos(m.x, m.y)
 
 	if g.player.x == x && g.player.y == y {
-		//TODO: Monster attack player
+		//TODO: Better calculate damage
+		damage := 1
+		g.player.hp -= damage
+		if g.player.hp <= 0 {
+			//TODO: Game over
+		}
 	} else {
 		m.x = x
 		m.y = y
