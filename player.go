@@ -9,6 +9,7 @@ type Player struct {
 	level          int
 	maxHP          int
 	hp             int
+	exp            int
 	healingActions int
 }
 
@@ -23,6 +24,7 @@ func NewPlayer(startX, startY int) *Player {
 		level:   1,
 		maxHP:   20,
 		hp:      20,
+		exp:     0,
 	}
 }
 

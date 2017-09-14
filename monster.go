@@ -4,6 +4,7 @@ type Monster struct {
 	x      int
 	y      int
 	hp     int
+	exp    int
 	name   string
 	symbol rune //What is displayed in the cell
 	active bool
@@ -26,21 +27,25 @@ func init() {
 			hp:     10,
 			name:   "Page",
 			symbol: 'P',
+			exp:    2,
 		},
 		{
 			hp:     25,
 			name:   "Squire",
 			symbol: 'S',
+			exp:    6,
 		},
 		{
 			hp:     47,
 			name:   "Knight",
 			symbol: 'K',
+			exp:    17,
 		},
 		{
 			hp:     100,
 			name:   "Commander",
 			symbol: 'C',
+			exp:    100,
 		},
 	}
 

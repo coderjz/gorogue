@@ -61,7 +61,7 @@ func (g *Game) render() {
 	termbox.SetCell(g.player.x, g.player.y, g.player.content, foregroundColor, backgroundColor)
 
 	//Render menu
-	menuString := fmt.Sprintf("Lvl: %d: HP: %d/%d", g.player.level, g.player.hp, g.player.maxHP)
+	menuString := fmt.Sprintf("HP: %d/%d EXP: %d LVL: %d: ", g.player.hp, g.player.maxHP, g.player.exp, g.player.level)
 	bottomRow := 23
 	for i := 0; i < len(menuString); i++ {
 		termbox.SetCell(i, bottomRow, rune(menuString[i]), foregroundColor, backgroundColor)
@@ -111,11 +111,13 @@ func (g *Game) movePlayer(dir Direction) bool {
 
 	for i, m := range g.level.monsters {
 		if m.x == newX && m.y == newY {
-			//TODO: Player attacks monster
+			//TODO: Better damage formula
 			damage := 3
 			m.hp -= damage
 			if m.hp <= 0 {
-				//TODO: Handle player EXP, level up, here
+				//TODO: Handle level up here
+				//Recommend a "PlayerLevel" array (of ints? structs including bonuses at that level for HP/STR/DEF/etc?) of EXP required for next level
+				g.player.exp += m.exp
 
 				//Just remove the monster from the array, it shouldn't re-render
 				g.level.monsters = append(g.level.monsters[:i], g.level.monsters[i+1:]...)
