@@ -68,6 +68,7 @@ func main() {
 			continue
 		}
 
+		g.player.HealFromActions()
 		g.updateFOV()
 		g.updateMonsters()
 		g.render()

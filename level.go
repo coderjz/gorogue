@@ -139,17 +139,6 @@ func convertRoomsToCells(rooms []*Room, cells *Cells) {
 	}
 }
 
-func random(min int, max int, rand *rand.Rand) int {
-	return rand.Intn(max-min) + min
-}
-
-func min(a, b int) int {
-	if a <= b {
-		return a
-	}
-	return b
-}
-
 func generateRooms() []*Room {
 	rooms := make([]*Room, 0)
 	for i := 0; i < numAttemptRooms; i++ {
