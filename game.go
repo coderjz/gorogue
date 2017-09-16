@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"math"
+	"strconv"
 
 	termbox "github.com/nsf/termbox-go"
 )
@@ -61,7 +63,11 @@ func (g *Game) render() {
 	termbox.SetCell(g.player.x, g.player.y, g.player.content, foregroundColor, backgroundColor)
 
 	//Render menu
-	menuString := fmt.Sprintf("HP: %d/%d EXP: %d LVL: %d: ", g.player.hp, g.player.maxHP, g.player.exp, g.player.level)
+	nextLevelExp := strconv.Itoa(g.player.nextLevelEXP)
+	if g.player.nextLevelEXP == math.MaxInt32 {
+		nextLevelExp = "MAX"
+	}
+	menuString := fmt.Sprintf("HP: %d/%d EXP: %d/%s LVL: %d: ", g.player.hp, g.player.maxHP, g.player.exp, nextLevelExp, g.player.level)
 	bottomRow := 23
 	for i := 0; i < len(menuString); i++ {
 		termbox.SetCell(i, bottomRow, rune(menuString[i]), foregroundColor, backgroundColor)
@@ -115,12 +121,11 @@ func (g *Game) movePlayer(dir Direction) bool {
 			damage := 3
 			m.hp -= damage
 			if m.hp <= 0 {
-				//TODO: Handle level up here
-				//Recommend a "PlayerLevel" array (of ints? structs including bonuses at that level for HP/STR/DEF/etc?) of EXP required for next level
-				g.player.exp += m.exp
-
 				//Just remove the monster from the array, it shouldn't re-render
 				g.level.monsters = append(g.level.monsters[:i], g.level.monsters[i+1:]...)
+
+				g.player.exp += m.exp
+				g.player.ProcessLevelUp()
 			}
 			return true
 		}
