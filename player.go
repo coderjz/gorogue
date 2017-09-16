@@ -38,6 +38,11 @@ func NewPlayer(startX, startY int) *Player {
 
 //HealFromActions handles the automatic healing in the game that happens after doing enough actions
 func (p *Player) HealFromActions() {
+	if p.hp == p.maxHP {
+		p.healingActions = 0
+		return
+	}
+
 	p.healingActions++
 	if p.healingActions == neededHealingActions {
 		p.hp = min(p.hp+p.level, p.maxHP)
