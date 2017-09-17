@@ -51,12 +51,16 @@ func main() {
 		if ev.Type == termbox.EventKey {
 			switch {
 			case ev.Key == termbox.KeyArrowUp || ev.Ch == 'k':
+				g.clearMessages()
 				playerActed = g.movePlayer(UP)
 			case ev.Key == termbox.KeyArrowDown || ev.Ch == 'j':
+				g.clearMessages()
 				playerActed = g.movePlayer(DOWN)
 			case ev.Key == termbox.KeyArrowLeft || ev.Ch == 'h':
+				g.clearMessages()
 				playerActed = g.movePlayer(LEFT)
 			case ev.Key == termbox.KeyArrowRight || ev.Ch == 'l':
+				g.clearMessages()
 				playerActed = g.movePlayer(RIGHT)
 			case ev.Key == termbox.KeyEsc:
 				return

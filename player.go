@@ -51,9 +51,10 @@ func (p *Player) HealFromActions() {
 }
 
 //ProcessLevelUp checks if the player can level up, and if so, updates the appropriate player stats
-func (p *Player) ProcessLevelUp() {
+//Returns if there was a level up or not
+func (p *Player) ProcessLevelUp() bool {
 	if p.exp < p.nextLevelEXP {
-		return
+		return false
 	}
 
 	newLevel := playerLevels[p.level+1]
@@ -65,11 +66,12 @@ func (p *Player) ProcessLevelUp() {
 	if !ok {
 		//We are at max level
 		p.nextLevelEXP = math.MaxInt32
-		return
+		return true
 	}
 
 	p.nextLevelEXP = afterNewLevel.neededEXP
 
 	//In case more than one level up happens from one exp increase
 	p.ProcessLevelUp()
+	return true
 }
