@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"time"
 
 	termbox "github.com/nsf/termbox-go"
 )
@@ -27,22 +28,29 @@ const FLOOR rune = '.'
 const ENEMY rune = 'x'
 
 type Game struct {
-	level    *Level
-	player   *Player
-	messages []string
+	level            *Level
+	player           *Player
+	messages         []string
+	clearMessageChan chan struct{}
+	renderedOnce     bool
 }
 
 func NewGame() *Game {
 	level := NewLevel()
 
 	return &Game{
-		level:    level,
-		player:   NewPlayer(level.startX, level.startY),
-		messages: make([]string, 0, 2),
+		level:            level,
+		player:           NewPlayer(level.startX, level.startY),
+		messages:         make([]string, 0, 2),
+		clearMessageChan: make(chan struct{}),
+		renderedOnce:     false,
 	}
 }
 
 func (g *Game) render() {
+	if g.renderedOnce {
+		g.clearMessageChan <- struct{}{} //Clear the message chan from last time
+	}
 	termbox.Clear(backgroundColor, backgroundColor)
 
 	//Display dungeon tiles
@@ -75,29 +83,55 @@ func (g *Game) render() {
 		termbox.SetCell(i, menuRow, rune(menuString[i]), foregroundColor, backgroundColor)
 	}
 
-	//TODO: A better approach to render messages is to show each message for say a second and a half or so.
-	//And if there are more messages left to then show those ones are shown for another second and a half or so.
-	//But if player first clears messages (by say moving) then we would not show those messages.
-	//Recommend to make a separate "GameMessages" struct that would take responsibility for this logic
-
 	//Render the message logs
 	messageRow := 22
-	for i, m := range g.messages {
-		//We only support showing up to two messages
-		if i >= 2 {
-			break
+	nextMessageToShow := 0
+	g.renderedOnce = true
+
+	displayMessages := func() (done bool) {
+		//First clear any old messages
+		for i := 0; i < 2; i++ {
+			for j := 0; j <= maxX; j++ {
+				termbox.SetCell(j, messageRow+i, ' ', foregroundColor, backgroundColor)
+			}
 		}
 
-		//Make sure string can't go outside of our range
-		if len(m) > maxX+1 {
-			m = m[:maxX+1]
+		//We only support showing up to two messages at a time
+		for i := 0; i < 2; i++ {
+			if nextMessageToShow >= len(g.messages) {
+				if i == 0 { //If i > 0, then we need to come back in again to clear the last message
+					return true
+				}
+				return false
+			}
+			for j, c := range g.messages[nextMessageToShow] {
+				termbox.SetCell(j, messageRow+i, c, foregroundColor, backgroundColor)
+			}
+			nextMessageToShow++
 		}
-		for j, c := range m {
-			termbox.SetCell(j, messageRow, c, foregroundColor, backgroundColor)
-		}
-		messageRow++
+		return false
 	}
+
+	displayMessages()
 	termbox.Flush()
+	go func() {
+		//Ticker displays next messages after a delay.
+		messageTicker := time.NewTicker(time.Millisecond * 1500)
+		for {
+			select {
+			case <-messageTicker.C:
+				if displayMessages() {
+					messageTicker.Stop()
+				}
+				termbox.Flush()
+			case <-g.clearMessageChan:
+				//Stop showing more messages and clean up resources (by returning out of go routine)
+				//This channel is sent data each time we render the next frame
+				messageTicker.Stop()
+				return
+			}
+		}
+	}()
 }
 
 func (g *Game) updateFOV() {

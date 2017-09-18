@@ -34,7 +34,7 @@ type Cell struct {
 
 //Recommended max size is 80x24. 0-based indexing. Allow bottom row for text and one spacer.
 const maxX int = 79
-const maxY int = 21
+const maxY int = 19
 
 const minRoomSize = 4
 const maxRoomSize = 10
