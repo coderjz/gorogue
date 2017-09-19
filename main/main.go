@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/coderjz/gorogue/game"
 	"github.com/nsf/termbox-go"
 )
 
@@ -38,9 +39,9 @@ func main() {
 	//TODO: Check terminal size (termbox.Size(), if not big enough and output error message)
 	//Maybe do that in the render itself or do it here with a check in the game loop?
 
-	g := NewGame()
-	g.updateFOV()
-	g.render()
+	g := game.NewGame()
+	g.UpdateFOV()
+	g.Render()
 
 	for {
 		ev := <-eventQueue
@@ -51,17 +52,17 @@ func main() {
 		if ev.Type == termbox.EventKey {
 			switch {
 			case ev.Key == termbox.KeyArrowUp || ev.Ch == 'k':
-				g.clearMessages()
-				playerActed = g.movePlayer(UP)
+				g.ClearMessages()
+				playerActed = g.MovePlayer(game.UP)
 			case ev.Key == termbox.KeyArrowDown || ev.Ch == 'j':
-				g.clearMessages()
-				playerActed = g.movePlayer(DOWN)
+				g.ClearMessages()
+				playerActed = g.MovePlayer(game.DOWN)
 			case ev.Key == termbox.KeyArrowLeft || ev.Ch == 'h':
-				g.clearMessages()
-				playerActed = g.movePlayer(LEFT)
+				g.ClearMessages()
+				playerActed = g.MovePlayer(game.LEFT)
 			case ev.Key == termbox.KeyArrowRight || ev.Ch == 'l':
-				g.clearMessages()
-				playerActed = g.movePlayer(RIGHT)
+				g.ClearMessages()
+				playerActed = g.MovePlayer(game.RIGHT)
 			case ev.Key == termbox.KeyEsc:
 				return
 			}
@@ -72,10 +73,10 @@ func main() {
 			continue
 		}
 
-		g.player.HealFromActions()
-		g.updateFOV()
-		g.updateMonsters()
-		g.render()
+		g.HealPlayerFromActions()
+		g.UpdateFOV()
+		g.UpdateMonsters()
+		g.Render()
 		time.Sleep(animationSpeed)
 	}
 }
