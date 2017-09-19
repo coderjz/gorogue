@@ -176,8 +176,7 @@ func (g *Game) movePlayer(dir Direction) bool {
 
 	for i, m := range g.level.monsters {
 		if m.x == newX && m.y == newY {
-			//TODO: Better damage formula
-			damage := 3
+			damage := calculateDamage(g.player.strength, m.defense)
 			m.hp -= damage
 			if m.hp <= 0 {
 				g.messages = append(g.messages, fmt.Sprintf("You killed %s.", m.name))
@@ -206,8 +205,7 @@ func (g *Game) moveMonster(m *Monster) {
 	x, y := g.determineMonsterMoveNewPos(m.x, m.y)
 
 	if g.player.x == x && g.player.y == y {
-		//TODO: Better calculate damage
-		damage := 1
+		damage := calculateDamage(m.strength, g.player.defense)
 		g.player.hp -= damage
 		if g.player.hp <= 0 {
 			//TODO: Game over

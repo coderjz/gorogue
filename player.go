@@ -11,6 +11,8 @@ type Player struct {
 	x              int
 	y              int
 	level          int
+	strength       int
+	defense        int
 	maxHP          int
 	hp             int
 	exp            int
@@ -31,6 +33,8 @@ func NewPlayer(startX, startY int) *Player {
 		level:        1,
 		maxHP:        level1.maxHP,
 		hp:           level1.maxHP,
+		strength:     level1.strength,
+		defense:      level1.defense,
 		exp:          0,
 		nextLevelEXP: level2.neededEXP,
 	}
@@ -61,6 +65,8 @@ func (p *Player) ProcessLevelUp() bool {
 	p.level = newLevel.level
 	p.maxHP = newLevel.maxHP
 	p.hp = newLevel.maxHP
+	p.strength = newLevel.strength
+	p.defense = newLevel.defense
 
 	afterNewLevel, ok := playerLevels[p.level+1]
 	if !ok {

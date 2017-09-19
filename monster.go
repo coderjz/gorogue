@@ -1,13 +1,15 @@
 package main
 
 type Monster struct {
-	x      int
-	y      int
-	hp     int
-	exp    int
-	name   string
-	symbol rune //What is displayed in the cell
-	active bool
+	x        int
+	y        int
+	hp       int
+	exp      int
+	strength int
+	defense  int
+	name     string
+	symbol   rune //What is displayed in the cell
+	active   bool
 }
 
 var monsterList []*Monster
@@ -24,28 +26,36 @@ const (
 func init() {
 	monsterList = []*Monster{
 		{
-			hp:     10,
-			name:   "Page",
-			symbol: 'P',
-			exp:    2,
+			hp:       10,
+			name:     "Page",
+			symbol:   'P',
+			exp:      2,
+			strength: 10,
+			defense:  4,
 		},
 		{
-			hp:     25,
-			name:   "Squire",
-			symbol: 'S',
-			exp:    6,
+			hp:       25,
+			name:     "Squire",
+			symbol:   'S',
+			exp:      6,
+			strength: 15,
+			defense:  8,
 		},
 		{
-			hp:     47,
-			name:   "Knight",
-			symbol: 'K',
-			exp:    17,
+			hp:       47,
+			name:     "Knight",
+			symbol:   'K',
+			exp:      17,
+			strength: 20,
+			defense:  12,
 		},
 		{
-			hp:     100,
-			name:   "Commander",
-			symbol: 'C',
-			exp:    100,
+			hp:       100,
+			name:     "Commander",
+			symbol:   'C',
+			exp:      100,
+			strength: 30,
+			defense:  20,
 		},
 	}
 
