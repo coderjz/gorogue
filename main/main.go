@@ -63,6 +63,8 @@ func main() {
 			case ev.Key == termbox.KeyArrowRight || ev.Ch == 'l':
 				g.ClearMessages()
 				playerActed = g.MovePlayer(game.RIGHT)
+			case ev.Key == termbox.KeySpace:
+				playerActed = g.ChangeFloor()
 			case ev.Key == termbox.KeyEsc:
 				return
 			}

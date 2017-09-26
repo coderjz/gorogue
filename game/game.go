@@ -26,9 +26,15 @@ const WALL rune = '#'
 const GUY rune = '@'
 const FLOOR rune = '.'
 const ENEMY rune = 'x'
+const FLOOR_PREV rune = '>'
+const FLOOR_NEXT rune = '<'
+
+const numLevels int = 3
 
 type Game struct {
-	level            *Level
+	levels           []*Level
+	currLevel        *Level
+	currLevelPos     int
 	player           *Player
 	messages         []string
 	clearMessageChan chan struct{}
@@ -36,11 +42,16 @@ type Game struct {
 }
 
 func NewGame() *Game {
-	level := NewLevel()
+	levels := make([]*Level, numLevels)
+	for i := 0; i < numLevels; i++ {
+		levels[i] = NewLevel()
+	}
 
 	return &Game{
-		level:            level,
-		player:           NewPlayer(level.startX, level.startY),
+		levels:           levels,
+		currLevelPos:     0,
+		currLevel:        levels[0],
+		player:           NewPlayer(levels[0].prevFloorX, levels[0].prevFloorY),
 		messages:         make([]string, 0, 2),
 		clearMessageChan: make(chan struct{}),
 		renderedOnce:     false,
@@ -54,7 +65,7 @@ func (g *Game) Render() {
 	termbox.Clear(backgroundColor, backgroundColor)
 
 	//Display dungeon tiles
-	for y, line := range g.level.cells {
+	for y, line := range g.currLevel.cells {
 		for x, cell := range line {
 			if cell.visible {
 				termbox.SetCell(x, y, cell.content, foregroundColor, backgroundColor)
@@ -63,8 +74,8 @@ func (g *Game) Render() {
 	}
 
 	//Add monsters on top of cells
-	for _, m := range g.level.monsters {
-		c := g.level.cells.get(m.x, m.y)
+	for _, m := range g.currLevel.monsters {
+		c := g.currLevel.cells.get(m.x, m.y)
 		if c.visible {
 			termbox.SetCell(m.x, m.y, m.symbol, monsterForegroundColor, backgroundColor)
 		}
@@ -136,19 +147,19 @@ func (g *Game) Render() {
 
 func (g *Game) UpdateFOV() {
 	x, y := g.player.x, g.player.y
-	r := g.level.roomContainsPoint(x, y)
+	r := g.currLevel.roomContainsPoint(x, y)
 	if r != nil {
 		for x = r.x1; x <= r.x2; x++ {
 			for y = r.y1; y <= r.y2; y++ {
-				g.level.cells[y][x].visible = true
+				g.currLevel.cells[y][x].visible = true
 			}
 		}
 	} else {
-		g.level.cells[y][x].visible = true
-		g.level.cells[y][x+1].visible = true
-		g.level.cells[y][x-1].visible = true
-		g.level.cells[y+1][x].visible = true
-		g.level.cells[y-1][x].visible = true
+		g.currLevel.cells[y][x].visible = true
+		g.currLevel.cells[y][x+1].visible = true
+		g.currLevel.cells[y][x-1].visible = true
+		g.currLevel.cells[y+1][x].visible = true
+		g.currLevel.cells[y-1][x].visible = true
 	}
 }
 
@@ -170,11 +181,11 @@ func (g *Game) MovePlayer(dir Direction) bool {
 	newX := g.player.x + x
 	newY := g.player.y + y
 
-	if g.level.cells.get(newX, newY).content == WALL {
+	if g.currLevel.cells.get(newX, newY).content == WALL {
 		return false
 	}
 
-	for i, m := range g.level.monsters {
+	for i, m := range g.currLevel.monsters {
 		if m.x == newX && m.y == newY {
 			damage := calculateDamage(g.player.strength, m.defense)
 			m.hp -= damage
@@ -182,7 +193,7 @@ func (g *Game) MovePlayer(dir Direction) bool {
 				g.messages = append(g.messages, fmt.Sprintf("You killed %s.", m.name))
 
 				//Just remove the monster from the array, it shouldn't re-render
-				g.level.monsters = append(g.level.monsters[:i], g.level.monsters[i+1:]...)
+				g.currLevel.monsters = append(g.currLevel.monsters[:i], g.currLevel.monsters[i+1:]...)
 
 				g.player.exp += m.exp
 				if g.player.ProcessLevelUp() {
@@ -218,13 +229,39 @@ func (g *Game) moveMonster(m *Monster) {
 	}
 }
 
+func (g *Game) ChangeFloor() bool {
+	if g.player.x == g.currLevel.prevFloorX && g.player.y == g.currLevel.prevFloorY {
+		if g.currLevelPos <= 0 {
+			//TODO - show dialog asking if player wants to leave. Special case to handle this (custom return value enum?)
+			return false
+		}
+		g.currLevelPos--
+		g.currLevel = g.levels[g.currLevelPos]
+		g.player.x = g.currLevel.nextFloorX
+		g.player.y = g.currLevel.nextFloorY
+		return true
+	} else if g.player.x == g.currLevel.nextFloorX && g.player.y == g.currLevel.nextFloorY {
+		if g.currLevelPos >= len(g.levels)-1 {
+			//Should never happen
+			//TODO: do not render the next floor on the top most floor
+			return false
+		}
+		g.currLevelPos++
+		g.currLevel = g.levels[g.currLevelPos]
+		g.player.x = g.currLevel.prevFloorX
+		g.player.y = g.currLevel.prevFloorY
+		return true
+	}
+	return false
+}
+
 func (g *Game) HealPlayerFromActions() {
 	g.player.HealFromActions()
 }
 
 func (g *Game) UpdateMonsters() {
-	for _, m := range g.level.monsters {
-		if g.level.cells.get(m.x, m.y).visible {
+	for _, m := range g.currLevel.monsters {
+		if g.currLevel.cells.get(m.x, m.y).visible {
 			m.active = true
 		}
 
@@ -252,12 +289,12 @@ func (g *Game) determineMonsterMoveNewPos(x, y int) (int, int) {
 }
 
 func (g *Game) monsterCanMoveTo(x, y int) bool {
-	c := g.level.cells.get(x, y)
+	c := g.currLevel.cells.get(x, y)
 	if c.content == WALL {
 		return false
 	}
 
-	for _, m := range g.level.monsters {
+	for _, m := range g.currLevel.monsters {
 		if m.x == x && m.y == y {
 			return false
 		}

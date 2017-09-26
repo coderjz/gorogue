@@ -8,18 +8,20 @@ import (
 
 //Level represents one level of the dungeon
 type Level struct {
-	cells    Cells
-	rooms    []*Room
-	monsters []*Monster
-	startX   int
-	startY   int
+	cells      Cells
+	rooms      []*Room
+	monsters   []*Monster
+	prevFloorX int
+	prevFloorY int
+	nextFloorX int
+	nextFloorY int
 }
 
 //Cells is a type for a double array of cells
 type Cells [][]Cell
 
-func (c Cells) get(x, y int) Cell {
-	return c[y][x]
+func (c Cells) get(x, y int) *Cell {
+	return &c[y][x]
 }
 
 func (c Cells) set(x, y int, cell Cell) {
@@ -69,16 +71,31 @@ func NewLevel() *Level {
 		generateTunnel(r1x, r1y, r2x, r2y, &cells)
 	}
 
-	startX, startY := rooms[0].getCenter()
+	prevFloorX, prevFloorY := rooms[0].getCenter()
+	var nextFloorX, nextFloorY int
+	for {
+		roomPos := random(0, len(rooms), levelRand)
+		nextFloorX, nextFloorY = rooms[roomPos].getPointInRoom()
+		if nextFloorX != prevFloorX || nextFloorY != prevFloorY {
+			break
+		}
+	}
 
-	monsters := generateMonsters(rooms, startX, startY)
+	prevFloorCell := cells.get(prevFloorX, prevFloorY)
+	prevFloorCell.content = FLOOR_PREV
+	nextFloorCell := cells.get(nextFloorX, nextFloorY)
+	nextFloorCell.content = FLOOR_NEXT
+
+	monsters := generateMonsters(rooms, prevFloorX, prevFloorY)
 
 	return &Level{
-		cells:    cells,
-		rooms:    rooms,
-		monsters: monsters,
-		startX:   startX,
-		startY:   startY,
+		cells:      cells,
+		rooms:      rooms,
+		monsters:   monsters,
+		prevFloorX: prevFloorX,
+		prevFloorY: prevFloorY,
+		nextFloorX: nextFloorX,
+		nextFloorY: nextFloorY,
 	}
 }
 
