@@ -20,6 +20,7 @@ const (
 
 const backgroundColor = termbox.ColorBlack
 const foregroundColor = termbox.ColorWhite
+const questForegroundColor = termbox.ColorYellow
 const monsterForegroundColor = termbox.ColorRed
 
 const WALL rune = '#'
@@ -28,6 +29,7 @@ const FLOOR rune = '.'
 const ENEMY rune = 'x'
 const FLOOR_PREV rune = '>'
 const FLOOR_NEXT rune = '<'
+const QUEST rune = '*'
 
 const numLevels int = 3
 
@@ -68,7 +70,11 @@ func (g *Game) Render() {
 	for y, line := range g.currLevel.cells {
 		for x, cell := range line {
 			if cell.visible {
-				termbox.SetCell(x, y, cell.content, foregroundColor, backgroundColor)
+				if cell.content != QUEST {
+					termbox.SetCell(x, y, cell.content, foregroundColor, backgroundColor)
+				} else {
+					termbox.SetCell(x, y, cell.content, questForegroundColor, backgroundColor)
+				}
 			}
 		}
 	}

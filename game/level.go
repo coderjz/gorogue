@@ -90,6 +90,7 @@ func NewLevel(levelNum int) *Level {
 	}
 
 	monsters := generateMonsters(rooms, prevFloorX, prevFloorY, levelNum)
+	handleFinalRoom(rooms, monsters, &cells, prevFloorX, prevFloorY, levelNum)
 
 	return &Level{
 		cells:      cells,
@@ -243,9 +244,8 @@ func generateMonsters(rooms []*Room, startX, startY, levelNum int) []*Monster {
 	for rIndex, r := range rooms {
 		roomMonsters := getMonstersForRoom(levelNum)
 
-		//TODO: Randomize monsters positions (x, y)
-		//TODO: Make sure no monster starts on top of player start position or on top of another monster
 		for i := 0; i < len(roomMonsters); i++ {
+			roomMonsters[i].room = r
 			roomMonsters[i].x, roomMonsters[i].y = r.getPointInRoom()
 
 			monsterPosHasConflict := false
@@ -316,4 +316,45 @@ func getMonstersForRoom(levelNum int) []*Monster {
 		}
 	}
 	return []*Monster{}
+}
+
+func handleFinalRoom(rooms []*Room, monsters []*Monster, cells *Cells, startX, startY, levelNum int) {
+	if levelNum != numLevels-1 {
+		return
+	}
+	finalRoom := getFurthestRoomFromPoint(rooms, startX, startY)
+	for i := 0; i < len(monsters); i++ {
+		if monsters[i].room == finalRoom {
+			monsters = append(monsters[:i], monsters[i+1:]...)
+		}
+	}
+	x, y := finalRoom.getCenter()
+
+	cells.set(x, y, Cell{
+		content: QUEST,
+		visible: false,
+	})
+
+	commander := NewMonster(Commander)
+	commander.x, commander.y = finalRoom.getPointInRoom()
+	commander.room = finalRoom
+
+	monsters = append(monsters, commander)
+}
+
+func getFurthestRoomFromPoint(rooms []*Room, x, y int) *Room {
+	if rooms == nil || len(rooms) == 0 {
+		return nil
+	}
+	maxDistance := -1.0
+	var furthestRoom *Room
+	for _, r := range rooms {
+		roomX, roomY := r.getCenter()
+		distance := distance(x, y, roomX, roomY)
+		if distance > maxDistance {
+			maxDistance = distance
+			furthestRoom = r
+		}
+	}
+	return furthestRoom
 }

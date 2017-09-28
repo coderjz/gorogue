@@ -10,6 +10,7 @@ type Monster struct {
 	name     string
 	symbol   rune //What is displayed in the cell
 	active   bool
+	room     *Room //Which room is the monster shown in, needed for custom logic for commander
 }
 
 var monsterList []*Monster
