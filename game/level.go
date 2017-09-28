@@ -89,7 +89,7 @@ func NewLevel(levelNum int) *Level {
 		nextFloorCell.content = FLOOR_NEXT
 	}
 
-	monsters := generateMonsters(rooms, prevFloorX, prevFloorY)
+	monsters := generateMonsters(rooms, prevFloorX, prevFloorY, levelNum)
 
 	return &Level{
 		cells:      cells,
@@ -238,10 +238,10 @@ func generateVertTunnel(x, y1, y2 int, cells *Cells) {
 	}
 }
 
-func generateMonsters(rooms []*Room, startX, startY int) []*Monster {
+func generateMonsters(rooms []*Room, startX, startY, levelNum int) []*Monster {
 	allMonsters := make([]*Monster, 0)
 	for rIndex, r := range rooms {
-		roomMonsters := getMonstersForRoom()
+		roomMonsters := getMonstersForRoom(levelNum)
 
 		//TODO: Randomize monsters positions (x, y)
 		//TODO: Make sure no monster starts on top of player start position or on top of another monster
@@ -273,16 +273,47 @@ func generateMonsters(rooms []*Room, startX, startY int) []*Monster {
 	return allMonsters
 }
 
-func getMonstersForRoom() []*Monster {
+func getMonstersForRoom(levelNum int) []*Monster {
 	num := levelRand.Intn(100)
-	switch {
-	case num < 30:
-		return []*Monster{}
-	case num < 75:
-		return []*Monster{NewMonster(Page)}
-	case num < 90:
-		return []*Monster{NewMonster(Page), NewMonster(Page)}
-	default:
-		return []*Monster{NewMonster(Page), NewMonster(Page), NewMonster(Page)}
+	if levelNum == 0 {
+		switch {
+		case num < 30:
+			return []*Monster{}
+		case num < 50:
+			return []*Monster{NewMonster(Page)}
+		case num < 70:
+			return []*Monster{NewMonster(Page), NewMonster(Page)}
+		case num < 90:
+			return []*Monster{NewMonster(Page), NewMonster(Page), NewMonster(Page)}
+		default:
+			return []*Monster{NewMonster(Page), NewMonster(Squire)}
+		}
+	} else if levelNum == 1 {
+		switch {
+		case num < 10:
+			return []*Monster{}
+		case num < 20:
+			return []*Monster{NewMonster(Page), NewMonster(Page)}
+		case num < 50:
+			return []*Monster{NewMonster(Squire)}
+		case num < 70:
+			return []*Monster{NewMonster(Squire), NewMonster(Squire)}
+		case num < 90:
+			return []*Monster{NewMonster(Squire), NewMonster(Squire), NewMonster(Squire)}
+		default:
+			return []*Monster{NewMonster(Squire), NewMonster(Knight)}
+		}
+	} else if levelNum == 2 {
+		switch {
+		case num < 10:
+			return []*Monster{}
+		case num < 50:
+			return []*Monster{NewMonster(Knight)}
+		case num < 70:
+			return []*Monster{NewMonster(Knight), NewMonster(Knight)}
+		default:
+			return []*Monster{NewMonster(Knight), NewMonster(Knight), NewMonster(Knight)}
+		}
 	}
+	return []*Monster{}
 }
