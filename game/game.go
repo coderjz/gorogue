@@ -44,7 +44,7 @@ type Game struct {
 func NewGame() *Game {
 	levels := make([]*Level, numLevels)
 	for i := 0; i < numLevels; i++ {
-		levels[i] = NewLevel()
+		levels[i] = NewLevel(i)
 	}
 
 	return &Game{

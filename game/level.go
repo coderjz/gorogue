@@ -45,7 +45,7 @@ const numAttemptRooms = 20
 var levelRand *rand.Rand
 
 // NewLevel generates the level
-func NewLevel() *Level {
+func NewLevel(levelNum int) *Level {
 	levelRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	cells := make(Cells, maxY+1) //+1 needed because maxX, maxY are 0-based
@@ -83,8 +83,11 @@ func NewLevel() *Level {
 
 	prevFloorCell := cells.get(prevFloorX, prevFloorY)
 	prevFloorCell.content = FLOOR_PREV
-	nextFloorCell := cells.get(nextFloorX, nextFloorY)
-	nextFloorCell.content = FLOOR_NEXT
+
+	if levelNum < numLevels-1 {
+		nextFloorCell := cells.get(nextFloorX, nextFloorY)
+		nextFloorCell.content = FLOOR_NEXT
+	}
 
 	monsters := generateMonsters(rooms, prevFloorX, prevFloorY)
 
