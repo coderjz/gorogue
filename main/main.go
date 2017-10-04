@@ -11,6 +11,13 @@ import (
 
 const animationSpeed = 10 * time.Millisecond
 
+const (
+	StateIntroScrolling = iota
+	StateIntroScrolled
+	StateInstructions
+	StateMainGame
+)
+
 func main() {
 	err := termbox.Init()
 	if err != nil {
@@ -39,46 +46,88 @@ func main() {
 	//TODO: Check terminal size (termbox.Size(), if not big enough and output error message)
 	//Maybe do that in the render itself or do it here with a check in the game loop?
 
-	g := game.NewGame()
-	g.UpdateFOV()
-	g.Render()
+	state := StateIntroScrolling
+
+	intro := game.NewIntro()
+	intro.Render() //This is asynchronous
+	intro.ScrollCompleted = func() {
+		state = StateIntroScrolled
+	}
+
+	instructions := game.Instructions{}
+	var mainGame *game.Game
 
 	for {
 		ev := <-eventQueue
-		//TODO: If ev.Type is resize, render error message
+		switch state {
+		case StateIntroScrolling:
+			if ev.Key == termbox.KeyEsc {
+				return
+			}
+			intro.CompleteScrolling()
+		case StateIntroScrolled:
+			if ev.Key == termbox.KeyEsc {
+				return
+			}
 
-		playerActed := false
+			if ev.Key == termbox.KeyArrowUp || ev.Ch == 'k' {
+				intro.SelectPrevChoice()
+			} else if ev.Key == termbox.KeyArrowDown || ev.Ch == 'j' {
+				intro.SelectNextChoice()
+			} else if ev.Key == termbox.KeySpace || ev.Key == termbox.KeyEnter {
+				switch intro.GetSelectedChoice() {
+				case 0: //Start game
+					//Genrate game here
+					//Render
 
-		if ev.Type == termbox.EventKey {
+					mainGame = game.NewGame()
+					mainGame.UpdateFOV()
+					mainGame.Render()
+					state = StateMainGame
+				case 1: //Instructions
+					instructions.Render()
+					state = StateInstructions
+				case 2: //Exit
+					return
+				}
+			}
+		case StateInstructions:
+			if ev.Key == termbox.KeyEsc || ev.Key == termbox.KeySpace || ev.Key == termbox.KeyEnter {
+				state = StateIntroScrolled
+				intro.RenderScrolled()
+			}
+		case StateMainGame:
+			playerActed := false
+			//Copy logic here from main game logic
 			switch {
 			case ev.Key == termbox.KeyArrowUp || ev.Ch == 'k':
-				g.ClearMessages()
-				playerActed = g.MovePlayer(game.UP)
+				mainGame.ClearMessages()
+				playerActed = mainGame.MovePlayer(game.UP)
 			case ev.Key == termbox.KeyArrowDown || ev.Ch == 'j':
-				g.ClearMessages()
-				playerActed = g.MovePlayer(game.DOWN)
+				mainGame.ClearMessages()
+				playerActed = mainGame.MovePlayer(game.DOWN)
 			case ev.Key == termbox.KeyArrowLeft || ev.Ch == 'h':
-				g.ClearMessages()
-				playerActed = g.MovePlayer(game.LEFT)
+				mainGame.ClearMessages()
+				playerActed = mainGame.MovePlayer(game.LEFT)
 			case ev.Key == termbox.KeyArrowRight || ev.Ch == 'l':
-				g.ClearMessages()
-				playerActed = g.MovePlayer(game.RIGHT)
+				mainGame.ClearMessages()
+				playerActed = mainGame.MovePlayer(game.RIGHT)
 			case ev.Key == termbox.KeySpace:
-				playerActed = g.ChangeFloor()
+				playerActed = mainGame.ChangeFloor()
 			case ev.Key == termbox.KeyEsc:
 				return
 			}
-		}
 
-		if !playerActed {
+			if !playerActed {
+				time.Sleep(animationSpeed)
+				continue
+			}
+
+			mainGame.HealPlayerFromActions()
+			mainGame.UpdateFOV()
+			mainGame.UpdateMonsters()
+			mainGame.Render()
 			time.Sleep(animationSpeed)
-			continue
 		}
-
-		g.HealPlayerFromActions()
-		g.UpdateFOV()
-		g.UpdateMonsters()
-		g.Render()
-		time.Sleep(animationSpeed)
 	}
 }
