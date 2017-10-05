@@ -16,6 +16,8 @@ const (
 	StateIntroScrolled
 	StateInstructions
 	StateMainGame
+	StateGameOverStarting
+	StateGameOverMenuDisplayed
 )
 
 func main() {
@@ -55,6 +57,10 @@ func main() {
 	}
 
 	instructions := game.Instructions{}
+	gameover := game.NewGameOver()
+	gameover.MenuDisplayed = func() {
+		state = StateGameOverMenuDisplayed
+	}
 	var mainGame *game.Game
 
 	for {
@@ -77,9 +83,6 @@ func main() {
 			} else if ev.Key == termbox.KeySpace || ev.Key == termbox.KeyEnter {
 				switch intro.GetSelectedChoice() {
 				case 0: //Start game
-					//Genrate game here
-					//Render
-
 					mainGame = game.NewGame()
 					mainGame.UpdateFOV()
 					mainGame.Render()
@@ -126,8 +129,39 @@ func main() {
 			mainGame.HealPlayerFromActions()
 			mainGame.UpdateFOV()
 			mainGame.UpdateMonsters()
+			if mainGame.IsGameOver {
+				mainGame.ClearMessages()
+				mainGame.StopMessageChan()
+				state = StateGameOverStarting
+				go gameover.Render(mainGame.GetPlayerPos())
+				continue
+			}
 			mainGame.Render()
 			time.Sleep(animationSpeed)
+		case StateGameOverStarting:
+			if ev.Key == termbox.KeyEsc {
+				return
+			}
+		case StateGameOverMenuDisplayed:
+			if ev.Key == termbox.KeyEsc {
+				return
+			}
+
+			if ev.Key == termbox.KeyArrowUp || ev.Ch == 'k' {
+				gameover.SelectPrevChoice()
+			} else if ev.Key == termbox.KeyArrowDown || ev.Ch == 'j' {
+				gameover.SelectNextChoice()
+			} else if ev.Key == termbox.KeySpace || ev.Key == termbox.KeyEnter {
+				switch gameover.GetSelectedChoice() {
+				case 0: //Start game
+					mainGame = game.NewGame()
+					mainGame.UpdateFOV()
+					mainGame.Render()
+					state = StateMainGame
+				case 1: //Exit
+					return
+				}
+			}
 		}
 	}
 }

@@ -41,6 +41,7 @@ type Game struct {
 	messages         []string
 	clearMessageChan chan struct{}
 	renderedOnce     bool
+	IsGameOver       bool
 }
 
 func NewGame() *Game {
@@ -57,13 +58,12 @@ func NewGame() *Game {
 		messages:         make([]string, 0, 2),
 		clearMessageChan: make(chan struct{}),
 		renderedOnce:     false,
+		IsGameOver:       false,
 	}
 }
 
 func (g *Game) Render() {
-	if g.renderedOnce {
-		g.clearMessageChan <- struct{}{} //Clear the message chan from last time
-	}
+	g.StopMessageChan()
 	termbox.Clear(backgroundColor, backgroundColor)
 
 	//Display dungeon tiles
@@ -169,6 +169,10 @@ func (g *Game) UpdateFOV() {
 	}
 }
 
+func (g *Game) GetPlayerPos() (x, y int) {
+	return g.player.x, g.player.y
+}
+
 //Return value is if the move requested counts as a player action.
 //Moving into a wall does not count as an action
 func (g *Game) MovePlayer(dir Direction) bool {
@@ -225,7 +229,7 @@ func (g *Game) moveMonster(m *Monster) {
 		damage := calculateDamage(m.strength, g.player.defense)
 		g.player.hp -= damage
 		if g.player.hp <= 0 {
-			//TODO: Game over
+			g.IsGameOver = true
 		} else {
 			g.messages = append(g.messages, fmt.Sprintf("%s has attacked you for %d damage.", m.name, damage))
 		}
@@ -310,4 +314,10 @@ func (g *Game) monsterCanMoveTo(x, y int) bool {
 
 func (g *Game) ClearMessages() {
 	g.messages = g.messages[:0]
+}
+
+func (g *Game) StopMessageChan() {
+	if g.renderedOnce {
+		g.clearMessageChan <- struct{}{}
+	}
 }
