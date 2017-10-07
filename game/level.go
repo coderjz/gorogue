@@ -331,7 +331,7 @@ func handleFinalRoom(rooms []*Room, monsters []*Monster, cells *Cells, startX, s
 	x, y := finalRoom.getCenter()
 
 	cells.set(x, y, Cell{
-		content: QUEST,
+		content: CHALICE,
 		visible: false,
 	})
 

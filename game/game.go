@@ -20,7 +20,7 @@ const (
 
 const backgroundColor = termbox.ColorBlack
 const foregroundColor = termbox.ColorWhite
-const questForegroundColor = termbox.ColorYellow
+const chaliceForegroundColor = termbox.ColorYellow
 const monsterForegroundColor = termbox.ColorRed
 
 const WALL rune = '#'
@@ -29,7 +29,7 @@ const FLOOR rune = '.'
 const ENEMY rune = 'x'
 const FLOOR_PREV rune = '>'
 const FLOOR_NEXT rune = '<'
-const QUEST rune = '*'
+const CHALICE rune = '*'
 
 const numLevels int = 3
 
@@ -42,6 +42,7 @@ type Game struct {
 	clearMessageChan chan struct{}
 	renderedOnce     bool
 	IsGameOver       bool
+	HasChalice       bool
 }
 
 func NewGame() *Game {
@@ -59,6 +60,7 @@ func NewGame() *Game {
 		clearMessageChan: make(chan struct{}),
 		renderedOnce:     false,
 		IsGameOver:       false,
+		HasChalice:       false,
 	}
 }
 
@@ -70,10 +72,10 @@ func (g *Game) Render() {
 	for y, line := range g.currLevel.cells {
 		for x, cell := range line {
 			if cell.visible {
-				if cell.content != QUEST {
+				if cell.content != CHALICE {
 					termbox.SetCell(x, y, cell.content, foregroundColor, backgroundColor)
 				} else {
-					termbox.SetCell(x, y, cell.content, questForegroundColor, backgroundColor)
+					termbox.SetCell(x, y, cell.content, chaliceForegroundColor, backgroundColor)
 				}
 			}
 		}
@@ -237,6 +239,20 @@ func (g *Game) moveMonster(m *Monster) {
 		m.x = x
 		m.y = y
 	}
+}
+
+func (g *Game) OnDungeonExit() bool {
+	return g.currLevelPos <= 0 && g.player.x == g.currLevel.prevFloorX && g.player.y == g.currLevel.prevFloorY
+}
+
+func (g *Game) OnChalice() bool {
+	return g.currLevel.cells.get(g.player.x, g.player.y).content == CHALICE
+}
+
+func (g *Game) TakeChalice() {
+	g.currLevel.cells.get(g.player.x, g.player.y).content = FLOOR
+	g.HasChalice = true
+	g.messages = append(g.messages, "You took the chalice of riches.")
 }
 
 func (g *Game) ChangeFloor() bool {

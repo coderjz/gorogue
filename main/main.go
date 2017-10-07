@@ -18,6 +18,8 @@ const (
 	StateMainGame
 	StateGameOverStarting
 	StateGameOverMenuDisplayed
+	StateDisplayLeaveDialog
+	StateWonGame
 )
 
 func main() {
@@ -62,6 +64,7 @@ func main() {
 		state = StateGameOverMenuDisplayed
 	}
 	var mainGame *game.Game
+	var leaveDialog *game.LeaveDialog
 
 	for {
 		ev := <-eventQueue
@@ -116,7 +119,20 @@ func main() {
 				mainGame.ClearMessages()
 				playerActed = mainGame.MovePlayer(game.RIGHT)
 			case ev.Key == termbox.KeySpace:
-				playerActed = mainGame.ChangeFloor()
+				if mainGame.OnDungeonExit() {
+					if mainGame.HasChalice {
+						state = StateWonGame
+					} else {
+						leaveDialog = game.NewLeaveDialog()
+						leaveDialog.Render()
+						state = StateDisplayLeaveDialog
+					}
+				} else if mainGame.OnChalice() {
+					mainGame.TakeChalice()
+					playerActed = true
+				} else {
+					playerActed = mainGame.ChangeFloor()
+				}
 			case ev.Key == termbox.KeyEsc:
 				return
 			}
@@ -160,6 +176,31 @@ func main() {
 					state = StateMainGame
 				case 1: //Exit
 					return
+				}
+			}
+		case StateWonGame:
+			if ev.Key == termbox.KeyEsc {
+				return
+			}
+			return
+		case StateDisplayLeaveDialog:
+			if ev.Key == termbox.KeyEsc {
+				mainGame.Render()
+				state = StateMainGame
+			} else if ev.Key == termbox.KeyArrowUp || ev.Ch == 'k' {
+				leaveDialog.SelectPrevChoice()
+			} else if ev.Key == termbox.KeyArrowDown || ev.Ch == 'j' {
+				leaveDialog.SelectNextChoice()
+			} else if ev.Key == termbox.KeySpace || ev.Key == termbox.KeyEnter {
+				switch leaveDialog.GetSelectedChoice() {
+				case 0: // Stay in game
+					mainGame.Render()
+					state = StateMainGame
+				case 1: // Go home (exit)
+					mainGame.StopMessageChan()
+					state = StateIntroScrolled
+					intro := game.NewIntro()
+					intro.RenderScrolled()
 				}
 			}
 		}
