@@ -65,6 +65,7 @@ func main() {
 	}
 	var mainGame *game.Game
 	var leaveDialog *game.LeaveDialog
+	var gameWin *game.GameWin
 
 	for {
 		ev := <-eventQueue
@@ -121,6 +122,8 @@ func main() {
 			case ev.Key == termbox.KeySpace:
 				if mainGame.OnDungeonExit() {
 					if mainGame.HasChalice {
+						gameWin = game.NewGameWin()
+						gameWin.Render()
 						state = StateWonGame
 					} else {
 						leaveDialog = game.NewLeaveDialog()
@@ -169,7 +172,7 @@ func main() {
 				gameover.SelectNextChoice()
 			} else if ev.Key == termbox.KeySpace || ev.Key == termbox.KeyEnter {
 				switch gameover.GetSelectedChoice() {
-				case 0: //Start game
+				case 0: //Start new game
 					mainGame = game.NewGame()
 					mainGame.UpdateFOV()
 					mainGame.Render()
@@ -182,7 +185,21 @@ func main() {
 			if ev.Key == termbox.KeyEsc {
 				return
 			}
-			return
+			if ev.Key == termbox.KeyArrowUp || ev.Ch == 'k' {
+				gameWin.SelectPrevChoice()
+			} else if ev.Key == termbox.KeyArrowDown || ev.Ch == 'j' {
+				gameWin.SelectNextChoice()
+			} else if ev.Key == termbox.KeySpace || ev.Key == termbox.KeyEnter {
+				switch gameWin.GetSelectedChoice() {
+				case 0: //Start new game
+					mainGame = game.NewGame()
+					mainGame.UpdateFOV()
+					mainGame.Render()
+					state = StateMainGame
+				case 1: // Exit
+					return
+				}
+			}
 		case StateDisplayLeaveDialog:
 			if ev.Key == termbox.KeyEsc {
 				mainGame.Render()
