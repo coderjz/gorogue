@@ -3,6 +3,7 @@ package game
 import (
 	"fmt"
 	"math"
+	"sort"
 	"strconv"
 	"time"
 
@@ -286,6 +287,13 @@ func (g *Game) HealPlayerFromActions() {
 }
 
 func (g *Game) UpdateMonsters() {
+	//Order monsters so the nearest ones moves first
+	//This prevents closer monsters from blocking the ones behind them by not moving first
+	sort.Slice(g.currLevel.monsters, func(i, j int) bool {
+		return tileDistance(g.currLevel.monsters[i].x, g.currLevel.monsters[i].y, g.player.x, g.player.y) <
+			tileDistance(g.currLevel.monsters[j].x, g.currLevel.monsters[j].y, g.player.x, g.player.y)
+	})
+
 	for _, m := range g.currLevel.monsters {
 		if g.currLevel.cells.get(m.x, m.y).visible {
 			m.active = true
@@ -299,8 +307,15 @@ func (g *Game) UpdateMonsters() {
 
 //Given the input (x, y), what is the best way to move towards the player
 func (g *Game) determineMonsterMoveNewPos(x, y int) (int, int) {
-	//For now, we'll just do it based off a naive check of player coordinates vs. monster coordinates
-	//TODO: A* Search ?
+
+	//To figure out the best move do an A* search towards the player coordinate
+	//We want to end up beside the player or a distance of 1 away (if already 1 away don't bother searching)
+	//If we bump into an enemy we should abort this search as it's not good
+
+	//Perhaps we could check for distance between monster and player first; if dist == 1 don't search
+	//If dist > threshold just use naive approach below, else do A*?  Do we need to add max timing for A*?
+
+	//Just naively check of player coordinates vs. monster coordinates
 	if g.player.x < x && g.monsterCanMoveTo(x-1, y) {
 		return x - 1, y
 	} else if g.player.x > x && g.monsterCanMoveTo(x+1, y) {
@@ -312,6 +327,7 @@ func (g *Game) determineMonsterMoveNewPos(x, y int) (int, int) {
 	} else {
 		return x, y
 	}
+	return x, y
 }
 
 func (g *Game) monsterCanMoveTo(x, y int) bool {
