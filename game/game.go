@@ -2,7 +2,6 @@ package game
 
 import (
 	"fmt"
-	"log"
 	"math"
 	"sort"
 	"strconv"
@@ -260,7 +259,6 @@ func (g *Game) TakeChalice() {
 func (g *Game) ChangeFloor() bool {
 	if g.player.x == g.currLevel.prevFloorX && g.player.y == g.currLevel.prevFloorY {
 		if g.currLevelPos <= 0 {
-			//TODO - show dialog asking if player wants to leave. Special case to handle this (custom return value enum?)
 			return false
 		}
 		g.currLevelPos--
@@ -271,7 +269,6 @@ func (g *Game) ChangeFloor() bool {
 	} else if g.player.x == g.currLevel.nextFloorX && g.player.y == g.currLevel.nextFloorY {
 		if g.currLevelPos >= len(g.levels)-1 {
 			//Should never happen
-			//TODO: do not render the next floor on the top most floor
 			return false
 		}
 		g.currLevelPos++
@@ -309,10 +306,6 @@ func (g *Game) UpdateMonsters() {
 //Given the input (x, y), what is the best way to move towards the player
 func (g *Game) determineMonsterMoveNewPos(x, y int) (int, int) {
 	nearestToPlayer, distance := g.nearestAdjacentPlayerSpot(x, y)
-	log.Printf("Player: (%d, %d); Nearest to player (%d, %d); Monster: (%d, %d); Distance: %d",
-		g.player.x, g.player.y,
-		nearestToPlayer[0], nearestToPlayer[1],
-		x, y, distance)
 
 	//We are already beside player
 	if distance == 0 {
@@ -363,12 +356,10 @@ func (g *Game) nearestAdjacentPlayerSpot(x, y int) (nearestSpot []int, distance 
 		}
 
 		if !g.monsterCanMoveTo(spot[0], spot[1]) {
-			log.Printf("Cannot move to spot\n")
 			continue
 		}
 
 		currDist := tileDistance(x, y, spot[0], spot[1])
-		log.Printf("Distance to spot: %d\n", currDist)
 		if currDist < distance {
 			distance = currDist
 			nearestSpot = spot
