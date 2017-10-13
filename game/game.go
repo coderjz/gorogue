@@ -2,6 +2,7 @@ package game
 
 import (
 	"fmt"
+	"log"
 	"math"
 	"sort"
 	"strconv"
@@ -307,27 +308,73 @@ func (g *Game) UpdateMonsters() {
 
 //Given the input (x, y), what is the best way to move towards the player
 func (g *Game) determineMonsterMoveNewPos(x, y int) (int, int) {
+	nearestToPlayer, distance := g.nearestAdjacentPlayerSpot(x, y)
+	log.Printf("Player: (%d, %d); Nearest to player (%d, %d); Monster: (%d, %d); Distance: %d",
+		g.player.x, g.player.y,
+		nearestToPlayer[0], nearestToPlayer[1],
+		x, y, distance)
 
-	//To figure out the best move do an A* search towards the player coordinate
-	//We want to end up beside the player or a distance of 1 away (if already 1 away don't bother searching)
-	//If we bump into an enemy we should abort this search as it's not good
+	//We are already beside player
+	if distance == 0 {
+		return g.player.x, g.player.y
+	}
 
-	//Perhaps we could check for distance between monster and player first; if dist == 1 don't search
-	//If dist > threshold just use naive approach below, else do A*?  Do we need to add max timing for A*?
-
-	//Just naively check of player coordinates vs. monster coordinates
-	if g.player.x < x && g.monsterCanMoveTo(x-1, y) {
-		return x - 1, y
-	} else if g.player.x > x && g.monsterCanMoveTo(x+1, y) {
-		return x + 1, y
-	} else if g.player.y < y && g.monsterCanMoveTo(x, y-1) {
-		return x, y - 1
-	} else if g.player.y > y && g.monsterCanMoveTo(x, y+1) {
-		return x, y + 1
-	} else {
+	//We could not find a nearest spot
+	if nearestToPlayer[0] < 0 {
 		return x, y
 	}
+
+	potentialMovements := [][]int{
+		[]int{x - 1, y},
+		[]int{x + 1, y},
+		[]int{x, y - 1},
+		[]int{x, y + 1},
+	}
+
+	//Can we move closer to that spot?
+	for _, movement := range potentialMovements {
+		if g.monsterCanMoveTo(movement[0], movement[1]) &&
+			tileDistance(movement[0], movement[1], nearestToPlayer[0], nearestToPlayer[1]) < distance {
+			return movement[0], movement[1]
+		}
+	}
+
+	//No better move, stay still
 	return x, y
+}
+
+func (g *Game) nearestAdjacentPlayerSpot(x, y int) (nearestSpot []int, distance int) {
+	nearestSpot = []int{-1, -1}
+	distance = math.MaxInt32
+
+	potentialSpots := [][]int{
+		[]int{g.player.x - 1, g.player.y},
+		[]int{g.player.x + 1, g.player.y},
+		[]int{g.player.x, g.player.y - 1},
+		[]int{g.player.x, g.player.y + 1},
+	}
+
+	for _, spot := range potentialSpots {
+		//Already adjacent spot, just return this spot and don't move
+		if x == spot[0] && y == spot[1] {
+			nearestSpot = spot
+			distance = 0
+			break
+		}
+
+		if !g.monsterCanMoveTo(spot[0], spot[1]) {
+			log.Printf("Cannot move to spot\n")
+			continue
+		}
+
+		currDist := tileDistance(x, y, spot[0], spot[1])
+		log.Printf("Distance to spot: %d\n", currDist)
+		if currDist < distance {
+			distance = currDist
+			nearestSpot = spot
+		}
+	}
+	return
 }
 
 func (g *Game) monsterCanMoveTo(x, y int) bool {
