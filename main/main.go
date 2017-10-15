@@ -30,10 +30,14 @@ func main() {
 
 	defer termbox.Close()
 
-	eventQueue := make(chan termbox.Event)
+	eventKeyPressQueue := make(chan termbox.Event)
 	go func() {
 		for {
-			eventQueue <- termbox.PollEvent()
+			ev := termbox.PollEvent()
+			if ev.Type != termbox.EventKey {
+				continue
+			}
+			eventKeyPressQueue <- ev
 		}
 	}()
 
@@ -68,7 +72,7 @@ func main() {
 	var gameWin *game.GameWin
 
 	for {
-		ev := <-eventQueue
+		ev := <-eventKeyPressQueue
 		switch state {
 		case StateIntroScrolling:
 			if ev.Key == termbox.KeyEsc {
