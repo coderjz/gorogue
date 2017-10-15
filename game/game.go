@@ -98,7 +98,7 @@ func (g *Game) Render() {
 	if g.player.nextLevelEXP == math.MaxInt32 {
 		nextLevelExp = "MAX"
 	}
-	menuString := fmt.Sprintf("HP: %d/%d EXP: %d/%s LVL: %d: ", g.player.hp, g.player.maxHP, g.player.exp, nextLevelExp, g.player.level)
+	menuString := fmt.Sprintf("HP: %d/%d EXP: %d/%s LVL: %d Floor: %d ", g.player.hp, g.player.maxHP, g.player.exp, nextLevelExp, g.player.level, g.currLevelPos+1)
 	for i := 0; i < len(menuString); i++ {
 		termbox.SetCell(i, menuRow, rune(menuString[i]), foregroundColor, backgroundColor)
 	}
